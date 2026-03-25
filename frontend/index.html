@@ -3,380 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel 2D - Agentes Trabalhando</title>
+    <title>Pixel Agents - Tchê Celulares</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .glass-panel { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        body { background-color: #0c0b16; color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         
-        /* 2D Room Styles */
-        .room-container {
+        /* Pixel Map Styles */
+        .pixel-map {
+            background-color: #212133;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 2px, transparent 2px);
+            background-size: 40px 40px;
             position: relative;
-            width: 100%;
-            height: 500px;
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            border: 4px solid #334155;
-            border-radius: 16px;
-            overflow: hidden;
+            image-rendering: pixelated;
+            border: 8px solid #161623;
+            border-radius: 8px;
             box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
         }
-        
-        .floor-grid {
+
+        .pixel-desk {
+            width: 40px; height: 20px;
+            background: #ab7a51; /* wood color */
+            border-top: 4px solid #c9986d;
+            border-bottom: 4px solid #6b4c33;
             position: absolute;
-            bottom: 0; left: 0; right: 0;
-            height: 60%;
-            background-image: 
-                linear-gradient(rgba(51, 65, 85, 0.5) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(51, 65, 85, 0.5) 1px, transparent 1px);
-            background-size: 40px 40px;
-            transform: perspective(600px) rotateX(60deg);
-            transform-origin: top;
-            opacity: 0.3;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.3);
+        }
+        
+        .pixel-screen {
+            width: 14px; height: 10px;
+            background: #3b82f6;
+            border: 2px solid #64748b;
+            position: absolute;
+            top: -10px; left: 12px;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
         }
 
-        .agent-desk {
+        /* Avatar Sprites (Square/Pixel-like) */
+        .sprite {
+            width: 20px; height: 20px;
             position: absolute;
-            width: 120px;
-            text-align: center;
             transition: all 0.3s ease;
         }
 
-        /* Sprite do Agente */
-        .agent-avatar {
-            width: 60px; height: 60px;
-            margin: 0 auto;
-            background: #1e293b;
-            border: 3px solid #475569;
-            border-radius: 50%;
+        .sprite-head { width: 12px; height: 12px; margin: 0 auto; border-radius: 2px; }
+        .sprite-body { width: 16px; height: 8px; margin: 0 auto; border-radius: 2px 2px 0 0; }
+
+        /* Cores dos Agentes */
+        /* Sofia (Copy) */
+        #sofia .sprite-head { background: #fca5a5; }
+        #sofia .sprite-body { background: #ec4899; }
+        /* Clara (Design) */
+        #clara .sprite-head { background: #fef08a; }
+        #clara .sprite-body { background: #a855f7; }
+        /* Miguel (Publisher) */
+        #miguel .sprite-head { background: #bfdbfe; }
+        #miguel .sprite-body { background: #3b82f6; }
+        /* CEO (You) */
+        #ceo .sprite-head { background: #fed7aa; }
+        #ceo .sprite-body { background: #eab308; }
+
+        /* Animation State */
+        .is-working .sprite { animation: bob 0.5s infinite alternate; }
+        @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+
+        /* Chat Styles */
+        .chat-container {
+            background: #11111a;
+            border-left: 2px solid #2a2a3f;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-history {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            border-bottom: 2px solid #2a2a3f;
+        }
+        .chat-bubble {
+            background: #1e1e2d;
+            border: 1px solid #2a2a3f;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            animation: slide-up 0.3s ease-out;
+            max-width: 90%;
+        }
+        .bubble-me { align-self: flex-end; background: #3b82f6; border-color: #2563eb; color: #fff; margin-left: auto;}
+        
+        .bubble-header { display: flex; align-items: center; margin-bottom: 8px; font-weight: bold; font-size: 0.8rem; }
+        .bubble-header img { width: 24px; height: 24px; border-radius: 4px; margin-right: 8px; }
+        .agent-name-sofia { color: #ec4899; }
+        .agent-name-clara { color: #a855f7; }
+        .agent-name-miguel { color: #3b82f6; }
+        .agent-name-ceo { color: #eab308; }
+        .bubble-me .bubble-header { color: #e0e7ff; }
+
+        .chat-input-area {
+            background: #0c0b16;
+            padding: 16px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-            position: relative;
-            z-index: 10;
         }
-
-        .desk-base {
-            width: 100px; height: 30px;
-            background: #334155;
+        .chat-input {
+            flex-grow: 1;
+            background: #1e1e2d;
+            border: 1px solid #2a2a3f;
             border-radius: 8px;
-            margin: -10px auto 0;
-            border-top: 3px solid #64748b;
-            box-shadow: 0 8px 10px rgba(0,0,0,0.4);
-            position: relative;
-            z-index: 5;
+            padding: 12px 16px;
+            color: white;
+            outline: none;
+            transition: border-color 0.2s;
         }
-
-        .screen {
-            position: absolute;
-            top: -20px; right: -10px;
-            width: 30px; height: 25px;
-            background: #0f172a;
-            border: 2px solid #94a3b8;
-            border-radius: 4px;
-            z-index: 8;
-        }
-
-        /* Animação quando está trabalhando */
-        .working .agent-avatar {
-            border-color: #3b82f6;
-            box-shadow: 0 0 20px #3b82f6;
-            animation: bounce 1s infinite alternate;
-        }
-        .working .screen {
+        .chat-input:focus { border-color: #3b82f6; }
+        .send-btn {
             background: #3b82f6;
-            box-shadow: 0 0 10px #3b82f6;
-            animation: pulse-screen 0.5s infinite alternate;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 48px; height: 48px;
+            margin-left: 12px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
         }
+        .send-btn:hover { background: #2563eb; }
 
-        /* Posições na sala */
-        #agent-gemini { bottom: 30%; left: 15%; }
-        #agent-pillow { bottom: 45%; left: 50%; transform: translateX(-50%); }
-        #agent-poster { bottom: 30%; right: 15%; }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Speech Bubble */
-        .speech-bubble {
-            position: absolute;
-            top: -50px; left: 50%;
-            transform: translateX(-50%);
-            background: #fff;
-            color: #0f172a;
-            padding: 8px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 20;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        /* Approval Card */
+        .approval-card {
+            background: #0f172a; border: 1px solid #475569; border-radius: 8px; padding: 1rem; margin-top: 0.75rem;
         }
-        .speech-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -5px; left: 50%;
-            transform: translateX(-50%);
-            border-width: 5px 5px 0;
-            border-style: solid;
-            border-color: #fff transparent transparent transparent;
-        }
-        .show-bubble { opacity: 1; top: -60px; animation: float-bubble 2s ease-in-out; }
+        .action-btn { padding: 6px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 0.8rem; }
+        .btn-approve { background: #10b981; color: white; border: 1px solid #059669; }
+        .btn-approve:hover { background: #059669; }
+        .btn-reject { background: #ef4444; color: white; border: 1px solid #b91c1c; }
+        .btn-reject:hover { background: #b91c1c; }
 
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
-        @keyframes pulse-screen { from { opacity: 0.7; } to { opacity: 1; } }
-        @keyframes float-bubble { 0%{opacity:0; transform:translateX(-50%) translateY(10px);} 10%{opacity:1; transform:translateX(-50%) translateY(0);} 90%{opacity:1; transform:translateX(-50%) translateY(0);} 100%{opacity:0; transform:translateX(-50%) translateY(-10px);} }
-
-        /* Scroller do Terminal */
-        #log-output { font-family: 'Courier New', Courier, monospace; font-size: 0.85em; }
-        .log-container { max-height: 150px; overflow-y: auto; }
     </style>
 </head>
-<body class="min-h-screen p-4">
+<body class="flex flex-col">
 
-<div class="max-w-6xl mx-auto space-y-6">
-    <!-- Header -->
-    <header class="glass-panel p-4 rounded-xl flex flex-col md:flex-row justify-between items-center">
-        <div>
-            <h1 class="text-xl font-bold text-white"><i class="fas fa-building mr-2 text-blue-400"></i> Agência Tchê Celulares</h1>
-            <p class="text-slate-400 text-sm">Status Geral: <span id="ws-status-text" class="text-emerald-400">Conectado ao QG</span></p>
-        </div>
-        <div class="mt-4 md:mt-0 flex space-x-4">
-            <button onclick="gerarPost()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold transition shadow-lg flex items-center">
-                <i class="fas fa-power-off mr-2"></i> Iniciar Expediente
-            </button>
-        </div>
-    </header>
+<!-- Top Navigation -->
+<div class="h-14 bg-[#161623] border-b border-[#2a2a3f] flex items-center px-6 justify-between shrink-0">
+    <div class="flex items-center text-[#818cf8] font-black tracking-widest uppercase text-sm">
+        <i class="fas fa-gamepad mr-3 text-lg"></i> Pixel Agents
+    </div>
+    <div class="flex space-x-6 text-xs font-bold text-slate-400">
+        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-yellow-500 mr-2"></div> CEO (Você)</div>
+        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-pink-500 mr-2"></div> Sofia (Copy)</div>
+        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-purple-500 mr-2"></div> Clara (Design)</div>
+        <div class="flex items-center"><div class="w-2 h-2 rounded-full bg-blue-500 mr-2"></div> Miguel (Publish)</div>
+    </div>
+    <div class="text-xs text-slate-500 flex items-center">
+        Status WS: <span id="ws-status" class="w-2 h-2 rounded-full bg-red-500 ml-2 shadow-[0_0_8px_#ef4444]"></span>
+    </div>
+</div>
 
-    <!-- A Sala 2D -->
-    <div class="room-container">
-        <!-- Título na parede -->
-        <div class="absolute top-6 left-0 right-0 text-center opacity-30">
-            <h2 class="text-4xl font-black uppercase tracking-widest text-slate-500">Operações</h2>
-        </div>
+<!-- Main Split Layout -->
+<div class="flex-1 flex overflow-hidden">
+    
+    <!-- Left Map View (70%) -->
+    <div class="hidden lg:flex flex-col w-[60%] p-8 items-center justify-center bg-[#0c0b16]">
+        <div class="w-full max-w-3xl h-[400px] pixel-map rounded-xl relative">
+            <!-- As mesas da agência -->
+            
+            <!-- Mesa da Sofia -->
+            <div class="pixel-desk" style="top: 80px; left: 80px;">
+                <div class="pixel-screen"></div>
+            </div>
+            <div id="sofia" class="sprite" style="top: 90px; left: 88px;">
+                <div class="sprite-head"></div><div class="sprite-body"></div>
+                <div class="text-[8px] font-bold text-pink-400 absolute w-32 -left-6 -top-4 text-center">Sofia</div>
+            </div>
 
-        <div class="floor-grid"></div>
+            <!-- Mesa da Clara -->
+            <div class="pixel-desk" style="top: 180px; left: 80px;">
+                <div class="pixel-screen"></div>
+            </div>
+            <div id="clara" class="sprite" style="top: 190px; left: 88px;">
+                <div class="sprite-head"></div><div class="sprite-body"></div>
+                <div class="text-[8px] font-bold text-purple-400 absolute w-32 -left-6 -top-4 text-center">Clara</div>
+            </div>
 
-        <!-- Agente 1: Gemini (Copywriter) -->
-        <div id="agent-gemini" class="agent-desk">
-            <div class="speech-bubble" id="bubble-gemini">Pensando...</div>
-            <div class="agent-avatar"><i class="fas fa-brain text-purple-400"></i></div>
-            <div class="desk-base"><div class="screen text-blue-500 flex items-center justify-center text-[10px]"><i class="fas fa-code"></i></div></div>
-            <p class="text-xs font-bold text-slate-300 mt-2">1. Copywriter (IA)</p>
-            <p class="text-[10px] text-slate-500" id="status-gemini">Aguardando pauta</p>
-        </div>
+            <!-- Mesa do Miguel -->
+            <div class="pixel-desk" style="top: 280px; left: 80px;">
+                <div class="pixel-screen"></div>
+            </div>
+            <div id="miguel" class="sprite" style="top: 290px; left: 88px;">
+                <div class="sprite-head"></div><div class="sprite-body"></div>
+                <div class="text-[8px] font-bold text-blue-400 absolute w-32 -left-6 -top-4 text-center">Miguel</div>
+            </div>
 
-        <!-- Agente 2: Pillow (Designer) -->
-        <div id="agent-pillow" class="agent-desk">
-            <div class="speech-bubble" id="bubble-pillow">Desenhando...</div>
-            <div class="agent-avatar"><i class="fas fa-paint-brush text-pink-400"></i></div>
-            <div class="desk-base"><div class="screen text-blue-500 flex items-center justify-center text-[10px]"><i class="fas fa-image"></i></div></div>
-            <p class="text-xs font-bold text-slate-300 mt-2">2. Designer (Pillow)</p>
-            <p class="text-[10px] text-slate-500" id="status-pillow">Pincéis limpos</p>
-        </div>
+            <!-- Mesa do CEO -->
+            <div class="pixel-desk" style="top: 180px; right: 100px; width: 60px; height: 30px; background: #6b4c33;"></div>
+            <div id="ceo" class="sprite" style="top: 170px; right: 115px;">
+                <div class="sprite-head"></div><div class="sprite-body" style="width:20px;"></div>
+                <div class="text-[8px] font-bold text-yellow-500 absolute w-32 -left-6 -top-4 text-center">Você (CEO)</div>
+            </div>
 
-        <!-- Agente 3: Instagram (Publisher) -->
-        <div id="agent-poster" class="agent-desk">
-            <div class="speech-bubble" id="bubble-poster">Postando...</div>
-            <div class="agent-avatar"><i class="fab fa-instagram text-orange-400"></i></div>
-            <div class="desk-base"><div class="screen text-blue-500 flex items-center justify-center text-[10px]"><i class="fas fa-mobile-alt"></i></div></div>
-            <p class="text-xs font-bold text-slate-300 mt-2">3. Publisher (Insta)</p>
-            <p class="text-[10px] text-slate-500" id="status-poster">Online</p>
+            <div class="absolute bottom-4 right-4 text-slate-600 text-xs font-mono">Simulador de Escritório 2D</div>
         </div>
     </div>
 
-    <!-- Interface Inferior (Logs e Pendentes) -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Logs Globais -->
-        <div class="glass-panel rounded-xl overflow-hidden flex flex-col h-64">
-            <div class="bg-slate-800 px-4 py-2 border-b border-slate-700 font-semibold text-sm">
-                <i class="fas fa-list-alt text-slate-400 mr-2"></i> Log de Tarefas
+    <!-- Right Chat View (100% Mobile, 40% Desktop) -->
+    <div class="w-full lg:w-[40%] chat-container">
+        <!-- Histórico do chat -->
+        <div id="chat-history" class="chat-history flex flex-col">
+            <!-- Apresentação Inicial -->
+            <div class="chat-bubble">
+                <div class="bubble-header"><i class="fas fa-robot text-slate-400 mr-2 text-lg"></i> <span class="text-slate-400">Sistema</span></div>
+                <div>Bem-vindo ao <strong>Pixel Agents</strong>. Seus 3 funcionários estão online e aguardando comandos. Digite "faça um post sobre..." para iniciar a engrenagem ou "status" para listar a fila.</div>
             </div>
-            <div class="p-3 log-container flex-1" id="log-box">
-                <ul id="log-output" class="space-y-1 text-slate-300"></ul>
-            </div>
+            
+            <!-- Exemplo (será injetado dinamicamente) -->
         </div>
 
-        <!-- Pendencias -->
-        <div class="glass-panel p-4 rounded-xl flex flex-col h-64 overflow-y-auto">
-            <h2 class="text-sm font-bold border-b border-slate-700 pb-2 mb-3">
-                <i class="fas fa-check-double text-emerald-400 mr-2"></i> Gaveta de Aprovação
-                <span id="badge-pendentes" class="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
-            </h2>
-            <div id="posts-container" class="space-y-3">
-                <p class="text-xs text-slate-500 text-center py-8">A mesa está limpa.</p>
-            </div>
+        <!-- Input do Chat -->
+        <div class="chat-input-area">
+            <input type="text" id="prompt-input" class="chat-input" placeholder="Comande a agência... Ex: 'Criar post de fones sem fio'" onkeypress="handleEnter(event)">
+            <button class="send-btn" onclick="enviarMensagem()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 </div>
 
 <script>
     let ws;
-    
-    // Funções visuais da sala 2D
-    function setAgentState(agentId, isWorking, statusText, bubbleSpeech = null) {
-        const desk = document.getElementById(`agent-${agentId}`);
-        const statusLabel = document.getElementById(`status-${agentId}`);
-        const bubble = document.getElementById(`bubble-${agentId}`);
+    let pendingPostId = null;
 
-        if (isWorking) {
-            desk.classList.add('working');
-            statusLabel.className = 'text-[10px] text-blue-400 font-bold';
-        } else {
-            desk.classList.remove('working');
-            statusLabel.className = 'text-[10px] text-slate-500';
-        }
-        statusLabel.innerText = statusText;
+    function scrollChat() {
+        const box = document.getElementById("chat-history");
+        box.scrollTop = box.scrollHeight;
+    }
 
-        if (bubbleSpeech) {
-            bubble.innerText = bubbleSpeech;
-            bubble.classList.remove('show-bubble');
-            void bubble.offsetWidth; // trigger reflow
-            bubble.classList.add('show-bubble');
+    function addChatBubble(agent, name, message, actionHtml = "") {
+        const box = document.getElementById("chat-history");
+        const isMe = agent === 'ceo';
+        
+        const avatarMap = {
+            'ceo': '<i class="fas fa-user-tie text-yellow-500 mr-2"></i>',
+            'sofia': '<i class="fas fa-pen-nib text-pink-500 mr-2"></i>',
+            'clara': '<i class="fas fa-paint-brush text-purple-500 mr-2"></i>',
+            'miguel': '<i class="fas fa-paper-plane text-blue-500 mr-2"></i>',
+            'system': '<i class="fas fa-cogs text-slate-500 mr-2"></i>'
+        };
+
+        const colorMap = {
+            'ceo': 'agent-name-ceo text-yellow-400',
+            'sofia': 'agent-name-sofia text-pink-400',
+            'clara': 'agent-name-clara text-purple-400',
+            'miguel': 'agent-name-miguel text-blue-400',
+            'system': 'text-slate-400'
+        };
+
+        // Formatação simples (Markdown -> HTML)
+        let formattedMsg = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+        const bubble = document.createElement("div");
+        bubble.className = `chat-bubble ${isMe ? 'bubble-me' : ''}`;
+        bubble.innerHTML = `
+            <div class="bubble-header">
+                ${avatarMap[agent] || avatarMap['system']} <span class="${colorMap[agent] || 'text-slate-400 uppercase tracking-wide text-[10px]'}">${name}</span>
+            </div>
+            <div>${formattedMsg}</div>
+            ${actionHtml ? `<div class="approval-card mt-3 p-3 bg-black/30 rounded border border-slate-700">${actionHtml}</div>` : ''}
+        `;
+        box.appendChild(bubble);
+        scrollChat();
+
+        // Animação no mapa 2D
+        if(['sofia','clara','miguel'].includes(agent)) {
+            const avatar = document.getElementById(agent);
+            if(avatar) {
+                avatar.parentElement.classList.add('is-working');
+                setTimeout(() => avatar.parentElement.classList.remove('is-working'), 3000);
+            }
         }
     }
 
-    function resetRoom() {
-        setAgentState('gemini', false, 'Aguardando pauta');
-        setAgentState('pillow', false, 'Pincéis limpos');
-        setAgentState('poster', false, 'Online');
+    function processWebSocketMessage(data) {
+        if (data.tipo === "chat") {
+            addChatBubble(data.agent_id, data.agent_name, data.mensagem, data.html_extra || "");
+        } 
+        else if (data.tipo === "pedir_aprovacao") {
+            pendingPostId = data.post_id;
+            const html = `
+                <div class="flex items-start mb-3">
+                    <img src="${data.imagem_url}?t=${Date.now()}" class="w-16 h-24 object-cover rounded mr-3">
+                    <div class="text-xs text-slate-300">
+                        <strong class="text-blue-300">Legenda sugerida:</strong><br>
+                        <textarea id="legenda-${data.post_id}" class="w-full bg-slate-900 border border-slate-700 p-2 mt-1 rounded outline-none h-16">${data.legenda}</textarea>
+                    </div>
+                </div>
+                <div class="flex space-x-2" id="acoes-${data.post_id}">
+                    <button class="action-btn btn-approve flex-1" onclick="aprovarPost(${data.post_id})">✅ Aprovar Fila</button>
+                    <button class="action-btn btn-reject flex-1" onclick="rejeitarPost(${data.post_id})">❌ Reprovar / Refazer</button>
+                </div>
+            `;
+            addChatBubble("miguel", "Miguel", "Aí está o projeto que a Clara renderizou. Você aprova e agenda para o próximo horário?", html);
+        }
     }
 
-    // Configuração WebSocket e Logica
     function connectWS() {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
         
         ws.onopen = () => {
-            document.getElementById('ws-status-text').innerText = "Conectado à Base";
-            document.getElementById('ws-status-text').className = "text-emerald-400 font-bold";
-            carregarPendentes();
+            document.getElementById('ws-status').className = 'w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] ml-2';
         };
 
         ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            
-            if(data.tipo === "log") {
-                addLog(data.dados);
-                
-                // Parser de inteligência do texto para animar a sala
-                const txt = data.dados.toLowerCase();
-                if (txt.includes("preparando conteúdo") || txt.includes("gerando textos") || txt.includes("pensando")) {
-                    setAgentState('gemini', true, 'Escrevendo Copy', 'Escrevendo ideias brutais! 🧠');
-                    setAgentState('pillow', false, 'Aguardando textos');
-                } 
-                else if (txt.includes("criando imagem") || txt.includes("desenhando") || txt.includes("pillow")) {
-                    setAgentState('gemini', false, 'Descansando');
-                    setAgentState('pillow', true, 'Renderizando', 'Desenhando a arte! 🎨');
-                }
-                else if (txt.includes("publicando") || txt.includes("instagram")) {
-                    setAgentState('pillow', false, 'Arte finalizada');
-                    setAgentState('poster', true, 'Enviando p/ Meta', 'Subindo pro Insta! 📲');
-                }
-                else if (txt.includes("publicado no instagram")) {
-                    setAgentState('poster', false, 'Post publicado');
-                    reproduzirSucesso();
-                }
-                else if (txt.includes("imagem criada")) {
-                    setAgentState('pillow', false, 'Aguardando você');
-                }
-
-            } else if (data.tipo === "status") {
-                if (data.dados === "working") {
-                    addLog("🚨 Novo ciclo de trabalho iniciado.");
-                } else if (data.dados === "idle") {
-                    // Espera 2s e limpa a sala
-                    setTimeout(resetRoom, 3000);
-                }
-            } else if (data.tipo === "novo_post" || data.tipo === "post_atualizado") {
-                carregarPendentes();
-            }
+            processWebSocketMessage(JSON.parse(event.data));
         };
 
         ws.onclose = () => {
-            document.getElementById('ws-status-text').innerText = "Sem Conexão";
-            document.getElementById('ws-status-text').className = "text-red-500 font-bold";
+            document.getElementById('ws-status').className = 'w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444] ml-2';
             setTimeout(connectWS, 3000);
         };
     }
 
-    function addLog(msg) {
-        const ul = document.getElementById("log-output");
-        const li = document.createElement("li");
-        li.innerHTML = `<span class="text-blue-400">></span> ${msg}`;
-        ul.appendChild(li);
-        const box = document.getElementById("log-box");
-        box.scrollTop = box.scrollHeight;
-    }
+    async function enviarMensagem() {
+        const input = document.getElementById("prompt-input");
+        const txt = input.value.trim();
+        if (!txt) return;
 
-    async function carregarPendentes() {
-        const res = await fetch("/api/pendentes");
-        if(res.status === 401) return;
-        const posts = await res.json();
-        const container = document.getElementById("posts-container");
-        document.getElementById("badge-pendentes").innerText = posts.length;
-        
-        if (posts.length === 0) {
-            container.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">A mesa está limpa.</p>`;
-            return;
-        }
+        addChatBubble('ceo', 'Você (CEO)', txt);
+        input.value = "";
 
-        let html = "";
-        posts.forEach(p => {
-            html += `
-            <div class="bg-slate-900 border border-slate-700 p-3 rounded-lg flex items-start space-x-3 mb-2">
-                <img src="${p.imagem_url}?t=${Date.now()}" class="w-16 h-24 object-cover rounded bg-black">
-                <div class="flex-1">
-                    <p class="text-xs font-bold text-blue-300">${p.titulo.substring(0,30)}...</p>
-                    <textarea id="legenda-${p.id}" class="w-full text-[10px] bg-slate-800 border border-slate-600 rounded mt-1 p-1 h-12 outline-none">${p.legenda}</textarea>
-                    <div class="flex space-x-2 mt-2">
-                        <button onclick="aprovar(${p.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold py-1 px-2 rounded w-full"><i class="fas fa-check"></i> Aprovar</button>
-                        <button onclick="rejeitar(${p.id})" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold py-1 px-2 rounded w-full"><i class="fas fa-trash"></i> Lixo</button>
-                    </div>
-                </div>
-            </div>`;
-        });
-        container.innerHTML = html;
-        
-        // Se apareceu post, anima a sala pra chamar atenção
-        if(posts.length > 0) {
-            setAgentState('pillow', false, 'Aguardando você', 'Chefe, aprova aí! 📄');
+        // Enviar para o WS
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ tipo: "comando", texto: txt }));
+        } else {
+            addChatBubble('system', 'Sistema', '❌ Erro de conexão com a agência.');
         }
     }
 
-    async function gerarPost() {
-        await fetch("/api/gerar", { method: "POST" });
+    function handleEnter(e) {
+        if (e.key === "Enter") enviarMensagem();
     }
 
-    async function aprovar(id) {
-        if(!confirm("Aprovar este Story para a próxima janela de horário?")) return;
+    async function aprovarPost(id) {
+        const btnRow = document.getElementById(`acoes-${id}`);
+        btnRow.innerHTML = `<span class="text-emerald-400 text-xs font-bold"><i class="fas fa-spinner fa-spin"></i> Processando aprovação...</span>`;
         const leg = document.getElementById(`legenda-${id}`).value;
         const res = await fetch(`/api/aprovar/${id}`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ legenda: leg })
         });
-        if(res.ok) { 
-            alert("✓ Aprovado e enfileirado para o próximo horário!");
-            carregarPendentes(); 
-        } else { 
-            alert("Erro ao aprovar"); 
+        if(res.ok) {
+            btnRow.innerHTML = `<span class="text-emerald-400 text-xs font-bold">✅ Aprovado com sucesso!</span>`;
+            // Miguel vai avisar pelo WS que tá aprovado
         }
     }
 
-    async function rejeitar(id) {
-        if(!confirm("Deletar?")) return;
+    async function rejeitarPost(id) {
+        if(!confirm("Tem certeza que quer descartar essa arte?")) return;
+        const btnRow = document.getElementById(`acoes-${id}`);
+        btnRow.innerHTML = `<span class="text-rose-400 text-xs font-bold"><i class="fas fa-trash"></i> Descartado.</span>`;
         await fetch(`/api/rejeitar/${id}`, { method: "POST" });
-        carregarPendentes();
-    }
-
-    function reproduzirSucesso() {
-        // Efeito bobo na sala
-        document.querySelector('.room-container').style.boxShadow = 'inset 0 0 100px rgba(16, 185, 129, 0.5)';
-        setTimeout(() => {
-            document.querySelector('.room-container').style.boxShadow = 'inset 0 0 50px rgba(0,0,0,0.5)';
-        }, 1000);
+        
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ tipo: "rejeitado", post_id: id }));
+        }
     }
 
     connectWS();
