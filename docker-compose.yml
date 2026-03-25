@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  bot-api:
+    build: .
+    container_name: tchece-bot-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/tchece_bot.db:/app/backend/tchece_bot.db
+      - ./backend/stories:/app/backend/stories
+    env_file:
+      - ./backend/.env
