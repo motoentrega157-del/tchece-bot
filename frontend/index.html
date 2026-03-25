@@ -351,13 +351,18 @@
     }
 
     async function aprovar(id) {
-        if(!confirm("Publicar no Instagram agora?")) return;
+        if(!confirm("Aprovar este Story para a próxima janela de horário?")) return;
         const leg = document.getElementById(`legenda-${id}`).value;
         const res = await fetch(`/api/aprovar/${id}`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ legenda: leg })
         });
-        if(res.ok) { carregarPendentes(); } else { alert("Erro ao postar"); }
+        if(res.ok) { 
+            alert("✓ Aprovado e enfileirado para o próximo horário!");
+            carregarPendentes(); 
+        } else { 
+            alert("Erro ao aprovar"); 
+        }
     }
 
     async function rejeitar(id) {

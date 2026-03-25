@@ -161,8 +161,18 @@ def _agendar_horarios(hora_manha: str, hora_noite: str):
     scheduler.remove_all_jobs()
     h1, m1 = hora_manha.split(":")
     h2, m2 = hora_noite.split(":")
-    scheduler.add_job(ciclo_agente, "cron", hour=int(h1), minute=int(m1), id="manha")
-    scheduler.add_job(ciclo_agente, "cron", hour=int(h2), minute=int(m2), id="noite")
+    
+    # Horários de Geração (1 hora ANTES da publicação)
+    hg1 = (int(h1) - 1) % 24
+    hg2 = (int(h2) - 1) % 24
+
+    # Agendar a CRIAÇÃO da arte (fica pending)
+    scheduler.add_job(ciclo_agente, "cron", hour=hg1, minute=int(m1), id="prep_manha")
+    scheduler.add_job(ciclo_agente, "cron", hour=hg2, minute=int(m2), id="prep_noite")
+
+    # Agendar a PUBLICAÇÃO de fato (colhe o aproved)
+    scheduler.add_job(rotina_publicar_agendado, "cron", hour=int(h1), minute=int(m1), id="pub_manha")
+    scheduler.add_job(rotina_publicar_agendado, "cron", hour=int(h2), minute=int(m2), id="pub_noite")
 
 
 @app.websocket("/ws")
@@ -210,12 +220,27 @@ async def aprovar_post(post_id: int, body: AprovarRequest = AprovarRequest()):
     if post["status"] != "pending":
         raise HTTPException(400, f"Post não está pendente (status: {post['status']})")
 
-    # Atualizar legenda editada se fornecida
-    if body.legenda:
-        await db.atualizar_post(post_id, legenda=body.legenda)
+    # Atualiza a legenda e muda o status para aprovado (pronto para ser colhido no horário certo)
+    await db.atualizar_post(post_id, legenda=body.legenda if body.legenda else post["legenda"], status="approved")
+    
+    await manager.broadcast({"tipo": "log", "dados": f"✅ Story #{post_id} aprovado! Ficará na fila de espera para o próximo horário programado."})
+    await manager.broadcast({"tipo": "post_atualizado", "dados": {"id": post_id, "status": "approved"}})
+    return {"ok": True, "mensagem": "Post aprovado e na fila!"}
 
+# ── Rotina de Publicação no Horário Marcado ────────────────────────────
+async def rotina_publicar_agendado():
+    """Roda nos horários agendados para colher um post aprovado e mandar pro Insta"""
+    posts_aprovados = await db.listar_posts(status="approved")
+    if not posts_aprovados:
+        await manager.broadcast({"tipo": "log", "dados": "⚠️ Horário de postagem chegou, mas não há posts aprovados na fila!"})
+        return
+    
+    post = posts_aprovados[0]  # Pega o mais antigo aprovado
+    post_id = post["id"]
+    
     await db.atualizar_post(post_id, status="publishing")
-    await manager.broadcast({"tipo": "log", "dados": f"📤 Publicando Story #{post_id} no Instagram..."})
+    await manager.broadcast({"tipo": "status", "dados": "working"})
+    await manager.broadcast({"tipo": "log", "dados": f"⏰ O Relógio tocou! Publicando Story aprovado #{post_id} no Instagram..."})
 
     try:
         resultado = await publicar_post(post["imagem_local"])
@@ -226,13 +251,13 @@ async def aprovar_post(post_id: int, body: AprovarRequest = AprovarRequest()):
             imagem_url=resultado["imagem_url"],
             publicado_em=datetime.now().isoformat()
         )
-        await manager.broadcast({"tipo": "log", "dados": f"✅ Story #{post_id} publicado no Instagram!"})
+        await manager.broadcast({"tipo": "log", "dados": f"✅ Story #{post_id} publicado 100% automático no Instagram!"})
         await manager.broadcast({"tipo": "post_atualizado", "dados": {"id": post_id, "status": "published"}})
-        return {"ok": True, "media_id": resultado["media_id"]}
     except Exception as e:
         await db.atualizar_post(post_id, status="error")
         await manager.broadcast({"tipo": "log", "dados": f"❌ Erro ao publicar: {str(e)}"})
-        raise HTTPException(500, f"Erro ao publicar: {str(e)}")
+    finally:
+        await manager.broadcast({"tipo": "status", "dados": "idle"})
 
 
 @app.post("/api/rejeitar/{post_id}")
